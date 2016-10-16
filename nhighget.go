@@ -5,18 +5,14 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
-	"time"
 	"os"
+	"time"
 
 	"nhighget/nget"
 )
 
-const TOTAL_EPISODE_COUNT = 265
-const TOTAL_LEVEL_COUNT = 1445
-const TOTAL_SCORE_COUNT = TOTAL_EPISODE_COUNT + TOTAL_LEVEL_COUNT
-
 func main() {
-	log.Println("Downloading Scores...")
+	log.Println("Starting...")
 	startTime := time.Now()
 	run()
 	runTime := time.Since(startTime)
@@ -24,21 +20,14 @@ func main() {
 }
 
 func run() {
+	flag.Parse()
 	fileName := flag.Arg(0)
 	if fileName == "" {
-		fileName = "n_scores.json"
+		fileName = "n-scores.json"
 	}
-	var scores []nget.NScoresResponse
-	resultChan := make(chan *nget.NScoresResponse)
-	go nget.GetAllScores(resultChan)
-	for i:=0; i<TOTAL_SCORE_COUNT; i++ {
-		resp := <-resultChan
-		if resp.Err != nil {
-			log.Printf("ERROR: %v", resp.Err)
-			continue;
-		}
-		scores = append(scores, *resp)
-	}
+
+	log.Println("Downloading Scores")
+	scores := nget.GetAllScores()
 
 	scoresJson, err := json.Marshal(scores)
 	if err != nil {
@@ -51,4 +40,5 @@ func run() {
 		log.Printf("Error: Failed to write scores to file %v: %v", fileName, err)
 		os.Exit(1)
 	}
+	log.Printf("Scores saved to %v", fileName)
 }
