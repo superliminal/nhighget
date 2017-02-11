@@ -1,0 +1,13 @@
+
+ignore_list = [
+    "kronogenics",
+    "fiordhraoi"
+]
+
+ignore_ids = [
+    63944,
+    94710
+]
+
+[db]
+connection_string = "user:pass@tcp(host:port)/database?charset=utf8mb4"

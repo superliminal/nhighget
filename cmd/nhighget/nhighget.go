@@ -1,26 +1,26 @@
 package main
 
 import (
-"encoding/json"
-"flag"
-"io/ioutil"
-"log"
-"os"
-"strings"
-"time"
+	"encoding/json"
+	"flag"
+	"io/ioutil"
+	"log"
+	"os"
+	"strings"
+	"time"
 
-"github.com/superliminal/nhighget/nget"
+	"github.com/superliminal/nhighget/nget"
 )
 
 func main() {
 	log.Println("Starting...")
 	startTime := time.Now()
-	run()
+	toJsonFile()
 	runTime := time.Since(startTime)
 	log.Printf("Complete: Score retrieval took %v seconds\n", runTime.Seconds())
 }
 
-func run() {
+func toJsonFile() {
 	flag.Parse()
 	fileName := strings.TrimSpace(flag.Arg(0))
 	if fileName == "" {
@@ -28,9 +28,9 @@ func run() {
 	}
 
 	log.Println("Downloading Scores")
-	scores := nget.GetAllScores()
+	scoresList := nget.GetAllScores()
 
-	scoresJson, err := json.Marshal(scores)
+	scoresJson, err := json.Marshal(scoresList)
 	if err != nil {
 		log.Printf("Error: Failed to encode the scores as json: %v", err)
 		os.Exit(1)
