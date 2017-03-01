@@ -33,7 +33,7 @@ func toDb() {
 	scoresList := nget.GetAllScores()
 	log.Println("Download Complete: Updating Database")
 
-	DB, err := db.GetDB(config.Conf.Db.ConnectionString)
+	DB, err := db.GetDB(config.Conf.Db.GetConnectionString())
 	if err != nil {
 		log.Printf("Cound not connect to database: %v", err.Error())
 		return
@@ -77,6 +77,7 @@ func updateLevelScores(s *db.DB, levelScores nget.NScoresResponse) {
 		} else {
 			if (newScore.Score != dbScore.Score) {
 				dbScore.Score = newScore.Score
+				dbScore.CreatedAt = time.Now()
 				s.Save(dbScore)
 			}
 		}

@@ -1,11 +1,14 @@
 package db
 
+import "time"
+
 type LevelHighscore struct {
-	Id         int    `gorm:"primary_key;AUTO_INCREMENT"`
-	LevelId    int    `gorm:"unique_index:uniq0level0player"`
-	PlayerId   int    `gorm:"unique_index:uniq0level0player"`
+	Id         int       `gorm:"primary_key;AUTO_INCREMENT"`
+	LevelId    int       `gorm:"unique_index:uniq0level0player"`
+	PlayerId   int       `gorm:"unique_index:uniq0level0player"`
 	Score      int
 	Rank       int
+	CreatedAt  time.Time
 	PlayerName string
 }
 func (LevelHighscore) TableName() string {
@@ -13,11 +16,12 @@ func (LevelHighscore) TableName() string {
 }
 
 type EpisodeHighscore struct {
-	Id         int    `gorm:"primary_key;AUTO_INCREMENT"`
-	EpisodeId  int    `gorm:"unique_index:uniq0episode0player"`
-	PlayerId   int    `gorm:"unique_index:uniq0episode0player"`
+	Id         int       `gorm:"primary_key;AUTO_INCREMENT"`
+	EpisodeId  int       `gorm:"unique_index:uniq0episode0player"`
+	PlayerId   int       `gorm:"unique_index:uniq0episode0player"`
 	Score      int
 	Rank       int
+	CreatedAt  time.Time
 	PlayerName string
 }
 func (EpisodeHighscore) TableName() string {
