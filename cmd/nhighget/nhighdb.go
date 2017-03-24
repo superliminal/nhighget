@@ -26,38 +26,59 @@ func toDb() {
 		log.Fatalf("Failed to initialize configuration: %v\n", err)
 		return
 	}
-	log.Printf("%v", config.Conf.IgnoreList)
-	log.Printf("%v", config.Conf.IgnoreIds)
+	log.Printf("Ignore List: %v", config.Conf.IgnoreList)
+	log.Printf("Ignore IDs: %v", config.Conf.IgnoreIds)
+	log.Printf("Connection String: %v", config.Conf.Db.GetConnectionString())
 
 	log.Println("Downloading Scores")
 	scoresList := nget.GetAllScores()
 	log.Println("Download Complete: Updating Database")
 
+	updateDatabase(scoresList)
+}
+
+// TODO: Concurrent db updates, pipe in from score getter
+func updateDatabase(scoresList []nget.NScoresResponse) {
 	DB, err := db.GetDB(config.Conf.Db.GetConnectionString())
 	if err != nil {
 		log.Printf("Cound not connect to database: %v", err.Error())
 		return
 	}
 
-	// TODO: Concurrent db updates
+	players, err := DB.GetAllPlayers()
+	if err != nil {
+		log.Printf("Cound not connect to database: %v", err.Error())
+		return
+	}
+	playerMap := make(map[int]*db.Player)
+	for _, player := range players {
+		playerMap[player.Id] = &player
+	}
+
 	for _, scores := range scoresList {
 		if scores.IsEpisodeScore() {
-			updateEpisodeScores(DB, scores)
+			updateEpisodeScores(DB, scores, playerMap)
 		} else {
-			updateLevelScores(DB, scores)
+			updateLevelScores(DB, scores, playerMap)
 		}
 	}
 }
 
 // Updates the highscores for the given level
-func updateLevelScores(s *db.DB, levelScores nget.NScoresResponse) {
+func updateLevelScores(s *db.DB, levelScores nget.NScoresResponse, players map[int]*db.Player) {
 
 	// Used to offset ranks due to cheaters
 	rankOffset := 0
 
 	for _, highscore := range levelScores.Scores {
-		// Do we ignore this player's scores?
-		if isPlayerIgnored(highscore) {
+		// Find the player, check they aren't ignored
+		player := players[highscore.UserId]
+		if player == nil {
+			// Player doesn't exist in db, create them
+			player = s.CreatePlayer(highscore.UserId, highscore.UserName, isPlayerIgnored(highscore))
+			players[player.Id] = player
+		}
+		if player.IsIgnored {
 			rankOffset += 1
 			continue
 		}
@@ -76,23 +97,26 @@ func updateLevelScores(s *db.DB, levelScores nget.NScoresResponse) {
 			s.Create(&newScore)
 		} else {
 			if (newScore.Score != dbScore.Score) {
-				dbScore.Score = newScore.Score
-				dbScore.CreatedAt = time.Now()
-				s.Save(dbScore)
+				s.UpdateLevelScore(&dbScore, newScore.Score)
 			}
 		}
 	}
 }
 
 // Updates the highscores for the given episode
-func updateEpisodeScores(s *db.DB, episodeScores nget.NScoresResponse) {
+func updateEpisodeScores(s *db.DB, episodeScores nget.NScoresResponse, players map[int]*db.Player) {
 
 	// Used to offset ranks due to cheaters
 	rankOffset := 0
 
 	for _, highscore := range episodeScores.Scores {
-		// Do we ignore this player's scores?
-		if isPlayerIgnored(highscore) {
+		// Find the player, check they aren't ignored
+		player := players[highscore.UserId]
+		if player == nil {
+			player = s.CreatePlayer(highscore.UserId, highscore.UserName, isPlayerIgnored(highscore))
+			players[player.Id] = player
+		}
+		if player.IsIgnored {
 			rankOffset += 1
 			continue
 		}
@@ -111,8 +135,7 @@ func updateEpisodeScores(s *db.DB, episodeScores nget.NScoresResponse) {
 			s.Create(&newScore)
 		} else {
 			if (newScore.Score != dbScore.Score) {
-				dbScore.Score = newScore.Score
-				s.Save(dbScore)
+				s.UpdateEpisodeScore(&dbScore, newScore.Score)
 			}
 		}
 	}

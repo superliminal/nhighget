@@ -1,12 +1,14 @@
 
 ignore_list = [
     "kronogenics",
-    "fiordhraoi"
+    "fiordhraoi",
+    "BlueIsTrue"
 ]
 
 ignore_ids = [
     63944,
-    94710
+    94710,
+    70749
 ]
 
 [db]
